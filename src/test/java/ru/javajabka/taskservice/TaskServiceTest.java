@@ -9,7 +9,7 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import ru.javajabka.taskservice.dto.TaskUpdateDTO;
 import ru.javajabka.taskservice.exception.BadRequestException;
-import ru.javajabka.taskservice.model.TaskRequest;
+import ru.javajabka.taskservice.dto.TaskRequestDTO;
 import ru.javajabka.taskservice.model.TaskResponse;
 import ru.javajabka.taskservice.model.TaskStatus;
 import ru.javajabka.taskservice.repository.TaskServiceRepository;
@@ -35,7 +35,7 @@ public class TaskServiceTest {
 
     @Test
     public void shouldReturnTaskResponse_WhenCreateValid() {
-        TaskRequest taskRequest = buildTaskRequest("Task 1", "Desc for task 1", LocalDate.of(2025, 5, 5), 1L, 2L);
+        TaskRequestDTO taskRequest = buildTaskRequest("Task 1", "Desc for task 1", LocalDate.of(2025, 5, 5), 1L, 2L);
         TaskResponse taskResponse = buildTaskResponse(
                 1L,
                 "Task 1",
@@ -53,7 +53,7 @@ public class TaskServiceTest {
 
     @Test
     public void shouldReturnException_WhenCreateNameEmpty() {
-        TaskRequest taskRequest = buildTaskRequest("", "Desc for task 1", LocalDate.of(2025, 5, 5), 1L, 2L);
+        TaskRequestDTO taskRequest = buildTaskRequest("", "Desc for task 1", LocalDate.of(2025, 5, 5), 1L, 2L);
         final BadRequestException badRequestException = Assertions.assertThrows(
                 BadRequestException.class,
                 () -> taskService.create(taskRequest)
@@ -63,7 +63,7 @@ public class TaskServiceTest {
 
     @Test
     public void shouldReturnException_WhenCreateUserNotFound() {
-        TaskRequest taskRequest = buildTaskRequest("", "Desc for task 1", LocalDate.of(2025, 5, 5), 1L, 2L);
+        TaskRequestDTO taskRequest = buildTaskRequest("", "Desc for task 1", LocalDate.of(2025, 5, 5), 1L, 2L);
         final BadRequestException badRequestException = Assertions.assertThrows(
                 BadRequestException.class,
                 () -> taskService.create(taskRequest)
@@ -73,7 +73,7 @@ public class TaskServiceTest {
 
     @Test
     public void shouldReturnException_WhenUserNotFound() {
-        TaskRequest taskRequest = buildTaskRequest("Task 1", "Desc for task 1", LocalDate.of(2025, 5, 5), 100L, 2L);
+        TaskRequestDTO taskRequest = buildTaskRequest("Task 1", "Desc for task 1", LocalDate.of(2025, 5, 5), 100L, 2L);
         Mockito.when(taskServiceRepository.create(taskRequest)).thenThrow(new BadRequestException("Пользователь с id 100 не найден"));
         final BadRequestException badRequestException = Assertions.assertThrows(BadRequestException.class, () -> taskService.create(taskRequest));
         Assertions.assertEquals("Пользователь с id 100 не найден", badRequestException.getMessage());
@@ -82,7 +82,7 @@ public class TaskServiceTest {
 
     @Test
     public void shouldReturnTaskResponse_WhenTaskGetById() {
-        TaskRequest taskRequest = buildTaskRequest(
+        TaskRequestDTO taskRequest = buildTaskRequest(
                 "Task 1",
                 "Desc for task 1",
                 LocalDate.of(2025, 5, 5), 1L, 2L
@@ -169,8 +169,8 @@ public class TaskServiceTest {
         Mockito.verify(taskServiceRepository).getAll(Optional.of(TaskStatus.TO_DO), null);
     }
 
-    private TaskRequest buildTaskRequest(String title, String description, LocalDate deadLine, Long author, Long assignee) {
-        return TaskRequest.builder()
+    private TaskRequestDTO buildTaskRequest(String title, String description, LocalDate deadLine, Long author, Long assignee) {
+        return TaskRequestDTO.builder()
                 .title(title)
                 .description(description)
                 .deadLine(deadLine)

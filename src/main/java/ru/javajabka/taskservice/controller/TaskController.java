@@ -4,7 +4,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import ru.javajabka.taskservice.dto.TaskUpdateDTO;
-import ru.javajabka.taskservice.model.TaskRequest;
+import ru.javajabka.taskservice.dto.TaskRequestDTO;
 import ru.javajabka.taskservice.model.TaskResponse;
 import ru.javajabka.taskservice.model.TaskStatus;
 import ru.javajabka.taskservice.service.TaskService;
@@ -21,7 +21,7 @@ public class TaskController {
     private final TaskService taskService;
 
     @PostMapping
-    public TaskResponse create(@RequestBody final TaskRequest taskRequest) {
+    public TaskResponse create(@RequestBody final TaskRequestDTO taskRequest) {
         return taskService.create(taskRequest);
     }
 

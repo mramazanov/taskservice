@@ -8,6 +8,6 @@ CREATE TABLE taskservice.task (
     dead_line TIMESTAMP WITH TIME ZONE NOT NULL,
     author INT NOT NULL,
     assignee INT NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL ,
     updated_at TIMESTAMP WITH TIME ZONE
 )

@@ -1,6 +1,7 @@
 package ru.javajabka.taskservice.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import ru.javajabka.taskservice.exception.BadRequestException;
@@ -16,12 +17,15 @@ public class UserService {
 
     private final RestTemplate restTemplate;
 
+    @Value("${url.service.user}")
+    private String userServiceUrl;
+
     public List<UserResponse> checkUserId(final List<Long> userIds) {
         String stringUserIds = userIds.stream().map(Objects::toString).collect(Collectors.joining(","));
-        List<UserResponse> users = restTemplate.getForObject("http://localhost:8081/api/v1/user?ids={ids}", List.class, stringUserIds);
+        List<UserResponse> users = restTemplate.getForObject(userServiceUrl + "/api/v1/user?ids={ids}", List.class, stringUserIds);
 
         if (users == null || users.size() != userIds.size()) {
-            throw new BadRequestException("Один или несколько полдьзователей не найдены");
+            throw new BadRequestException("Один или несколько пользователей не найдены");
         }
 
         return users;

@@ -1,4 +1,4 @@
-package ru.javajabka.taskservice.model;
+package ru.javajabka.taskservice.dto;
 
 import lombok.Builder;
 import lombok.Data;
@@ -7,7 +7,7 @@ import java.time.LocalDate;
 
 @Data
 @Builder
-public class TaskRequest {
+public class TaskRequestDTO {
     private final String title;
     private final String description;
     private final LocalDate deadLine;

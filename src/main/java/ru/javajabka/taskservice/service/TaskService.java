@@ -6,11 +6,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import ru.javajabka.taskservice.dto.TaskUpdateDTO;
 import ru.javajabka.taskservice.exception.BadRequestException;
-import ru.javajabka.taskservice.model.TaskRequest;
+import ru.javajabka.taskservice.dto.TaskRequestDTO;
 import ru.javajabka.taskservice.model.TaskResponse;
 import ru.javajabka.taskservice.model.TaskStatus;
 import ru.javajabka.taskservice.repository.TaskServiceRepository;
-
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -23,11 +22,8 @@ public class TaskService {
     private final TaskServiceRepository taskServiceRepository;
 
     @Transactional(rollbackFor = Exception.class)
-    public TaskResponse create(final TaskRequest taskRequest) {
+    public TaskResponse create(final TaskRequestDTO taskRequest) {
         validate(taskRequest);
-
-        userService.checkUserId(List.of(taskRequest.getAuthor(), taskRequest.getAssignee()));
-
         return taskServiceRepository.create(taskRequest);
     }
 
@@ -39,7 +35,6 @@ public class TaskService {
     @Transactional(rollbackFor = Exception.class)
     public TaskResponse update(final TaskUpdateDTO taskUpdateDTO) {
         validate(taskUpdateDTO);
-        userService.checkUserId(List.of(taskUpdateDTO.getAssignee()));
         TaskResponse foundTask = taskServiceRepository.getById(taskUpdateDTO.getId());
 
         TaskUpdateDTO taskToUpdate = TaskUpdateDTO.builder()
@@ -62,7 +57,7 @@ public class TaskService {
         return taskServiceRepository.getAll(status, assignee);
     }
 
-    private void validate(final TaskRequest taskRequest) {
+    private void validate(final TaskRequestDTO taskRequest) {
         if (taskRequest == null) {
             throw new BadRequestException("Введите значения для задачи");
         }
@@ -86,6 +81,7 @@ public class TaskService {
         if (taskRequest.getAssignee() == null || taskRequest.getAssignee() <= 0) {
             throw new BadRequestException("Введите идентификатор ответственного больше нуля");
         }
+        userService.checkUserId(List.of(taskRequest.getAuthor(), taskRequest.getAssignee()));
     }
 
     private void validate(final TaskUpdateDTO taskUpdateDTO) {
@@ -93,6 +89,10 @@ public class TaskService {
             if (taskUpdateDTO.getDeadLine().isBefore(LocalDate.now().plusDays(1))) {
                 throw new BadRequestException("Введите дату дедлайна позже текущей даты");
             }
+        }
+
+        if (taskUpdateDTO != null && taskUpdateDTO.getAssignee() != null) {
+            userService.checkUserId(List.of(taskUpdateDTO.getAssignee()));
         }
     }
 }

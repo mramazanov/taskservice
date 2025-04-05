@@ -8,7 +8,7 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
 import ru.javajabka.taskservice.dto.TaskUpdateDTO;
 import ru.javajabka.taskservice.exception.BadRequestException;
-import ru.javajabka.taskservice.model.TaskRequest;
+import ru.javajabka.taskservice.dto.TaskRequestDTO;
 import ru.javajabka.taskservice.model.TaskResponse;
 import ru.javajabka.taskservice.model.TaskStatus;
 import ru.javajabka.taskservice.repository.mapper.TaskServiceMapper;
@@ -49,7 +49,7 @@ public class TaskServiceRepository {
     private final TaskServiceMapper taskServiceMapper;
 
 
-    public TaskResponse create(final TaskRequest taskRequest) {
+    public TaskResponse create(final TaskRequestDTO taskRequest) {
         try {
             return jdbcTemplate.queryForObject(INSERT, taskToSql(null, taskRequest), taskServiceMapper);
         } catch (DuplicateKeyException exc) {
@@ -82,7 +82,7 @@ public class TaskServiceRepository {
         return jdbcTemplate.query(GET_ALL, taskToSql(status, assignee), taskServiceMapper);
     }
 
-    private MapSqlParameterSource taskToSql(final Long id, final TaskRequest taskRequest) {
+    private MapSqlParameterSource taskToSql(final Long id, final TaskRequestDTO taskRequest) {
         MapSqlParameterSource parameterSource = new MapSqlParameterSource();
         parameterSource.addValue("id", id);
 

@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 
 @Component
 public class TaskServiceMapper implements RowMapper<Task> {
+
     @Override
     public Task mapRow(ResultSet rs, int rowNum) throws SQLException {
         LocalDateTime updated_at = null;

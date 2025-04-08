@@ -30,7 +30,7 @@ dependencies {
 	compileOnly 'org.projectlombok:lombok:1.18.36'
 	annotationProcessor 'org.projectlombok:lombok:1.18.36'
 
-	testImplementation 'org.springframework.boot:spring-boot-starter-test:3.4.3'
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.junit.platform:junit-platform-launcher:1.11.4'
 }
 

@@ -33,6 +33,7 @@ public class TaskController {
     }
 
     @PatchMapping
+    @Operation(summary = "Обновить задачу")
     public Task update(@RequestBody final TaskUpdateDTO taskUpdateDTO) {
         return taskService.update(taskUpdateDTO);
     }

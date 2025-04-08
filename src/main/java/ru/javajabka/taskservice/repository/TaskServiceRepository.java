@@ -6,9 +6,7 @@ import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
-import ru.javajabka.taskservice.model.TaskUpdateDTO;
 import ru.javajabka.taskservice.exception.BadRequestException;
-import ru.javajabka.taskservice.model.TaskRequestDTO;
 import ru.javajabka.taskservice.model.Task;
 import ru.javajabka.taskservice.model.TaskStatus;
 import ru.javajabka.taskservice.repository.mapper.TaskServiceMapper;
@@ -20,25 +18,25 @@ import java.util.Optional;
 public class TaskServiceRepository {
 
     private static final String INSERT = """
-            INSERT INTO taskservice.task (title, description, status, dead_line, author, assignee, created_at)
+            INSERT INTO task_service.task (title, description, status, dead_line, author, assignee, created_at)
             VALUES (:title, :description, 'TO_DO', :deadLine, :author, :assignee, now())
             RETURNING *;
             """;
 
     private static final String GET_BY_ID = """
-            SELECT * FROM taskservice.task
+            SELECT * FROM task_service.task
             WHERE status != 'DELETE' AND id = :id
             """;
 
     private static final String UPDATE = """
-            UPDATE taskservice.task
+            UPDATE task_service.task
             SET title = :title, description = :description, status = :status, dead_line = :deadLine, assignee = :assignee, updated_at = now()
             WHERE id = :id
             RETURNING *;
             """;
 
     private static final String GET_ALL = """
-            SELECT * FROM taskservice.task
+            SELECT * FROM task_service.task
             WHERE (:assignee::integer is null OR assignee = :assignee::integer)
             AND (:status::varchar is null OR status = :status::varchar)
             AND (:status = 'DELETE' OR status != 'DELETE')
@@ -62,7 +60,6 @@ public class TaskServiceRepository {
         } catch (EmptyResultDataAccessException exc) {
             throw new BadRequestException(String.format("Задача с id %d не найдена", id));
         }
-
     }
 
     public Task update(final Task task) {

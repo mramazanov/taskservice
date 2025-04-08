@@ -1,6 +1,6 @@
-CREATE SCHEMA taskservice;
+CREATE SCHEMA task_service;
 
-CREATE TABLE taskservice.task (
+CREATE TABLE task_service.task (
     id SERIAL PRIMARY KEY,
     title VARCHAR UNIQUE NOT NULL,
     description VARCHAR NOT NULL,

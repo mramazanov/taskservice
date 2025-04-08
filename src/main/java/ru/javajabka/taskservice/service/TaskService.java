@@ -4,13 +4,14 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
-import ru.javajabka.taskservice.dto.TaskUpdateDTO;
+import ru.javajabka.taskservice.model.TaskUpdateDTO;
 import ru.javajabka.taskservice.exception.BadRequestException;
-import ru.javajabka.taskservice.dto.TaskRequestDTO;
-import ru.javajabka.taskservice.model.TaskResponse;
+import ru.javajabka.taskservice.model.TaskRequestDTO;
+import ru.javajabka.taskservice.model.Task;
 import ru.javajabka.taskservice.model.TaskStatus;
 import ru.javajabka.taskservice.repository.TaskServiceRepository;
 import java.time.LocalDate;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -22,35 +23,45 @@ public class TaskService {
     private final TaskServiceRepository taskServiceRepository;
 
     @Transactional(rollbackFor = Exception.class)
-    public TaskResponse create(final TaskRequestDTO taskRequest) {
+    public Task create(final TaskRequestDTO taskRequest) {
         validate(taskRequest);
-        return taskServiceRepository.create(taskRequest);
+
+        Task task = Task.builder()
+                .title(taskRequest.getTitle())
+                .description(taskRequest.getDescription())
+                .deadLine(taskRequest.getDeadLine())
+                .author(taskRequest.getAuthor())
+                .assignee(taskRequest.getAssignee())
+                .build();
+
+        return taskServiceRepository.create(task);
     }
 
     @Transactional(readOnly = true)
-    public TaskResponse getById(final Long id) {
+    public Task getById(final Long id) {
         return taskServiceRepository.getById(id);
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public TaskResponse update(final TaskUpdateDTO taskUpdateDTO) {
+    public Task update(final TaskUpdateDTO taskUpdateDTO) {
         validate(taskUpdateDTO);
-        TaskResponse foundTask = taskServiceRepository.getById(taskUpdateDTO.getId());
 
-        TaskUpdateDTO taskToUpdate = TaskUpdateDTO.builder()
-                .id(foundTask.getId())
+        Task foundTask = taskServiceRepository.getById(taskUpdateDTO.getId());
+
+        Task task = Task.builder()
+                .id(taskUpdateDTO.getId())
                 .title(Optional.ofNullable(taskUpdateDTO.getTitle()).orElse(foundTask.getTitle()))
                 .description(Optional.ofNullable(taskUpdateDTO.getDescription()).orElse(foundTask.getDescription()))
                 .status(Optional.ofNullable(taskUpdateDTO.getStatus()).orElse(foundTask.getStatus()))
-                .deadLine(Optional.ofNullable(taskUpdateDTO.getDeadLine() ).orElse(foundTask.getDeadLine()))
+                .deadLine(Optional.ofNullable(taskUpdateDTO.getDeadLine()).orElse(foundTask.getDeadLine()))
                 .assignee(Optional.ofNullable(taskUpdateDTO.getAssignee()).orElse(foundTask.getAssignee()))
                 .build();
 
-        return taskServiceRepository.update(taskToUpdate);
+        return taskServiceRepository.update(task);
     }
 
     @Transactional(readOnly = true)
-    public List<TaskResponse> getAll(
+    public List<Task> getAll(
             final Optional<TaskStatus> status,
             final Optional<Long> assignee
     ) {

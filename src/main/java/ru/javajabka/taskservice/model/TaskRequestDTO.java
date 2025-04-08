@@ -1,8 +1,7 @@
-package ru.javajabka.taskservice.dto;
+package ru.javajabka.taskservice.model;
 
 import lombok.Builder;
 import lombok.Data;
-
 import java.time.LocalDate;
 
 @Data

@@ -1,5 +1,8 @@
 package ru.javajabka.taskservice.model;
 
+import lombok.Getter;
+
+@Getter
 public class ApiError {
 
     private boolean success;
@@ -8,13 +11,5 @@ public class ApiError {
     public ApiError(final String message) {
         this.success = false;
         this.message = message;
-    }
-
-    public boolean isSuccess() {
-        return this.success;
-    }
-
-    public String getMessage() {
-        return this.message;
     }
 }

@@ -2,14 +2,15 @@ package ru.javajabka.taskservice.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 import ru.javajabka.taskservice.exception.BadRequestException;
-import ru.javajabka.taskservice.model.UserResponse;
-
+import ru.javajabka.taskservice.model.User;
 import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -20,14 +21,27 @@ public class UserService {
     @Value("${url.service.user}")
     private String userServiceUrl;
 
-    public List<UserResponse> checkUserId(final List<Long> userIds) {
-        String stringUserIds = userIds.stream().map(Objects::toString).collect(Collectors.joining(","));
-        List<UserResponse> users = restTemplate.getForObject(userServiceUrl + "/api/v1/user?ids={ids}", List.class, stringUserIds);
+    public void checkUserId(final List<Long> userIds) {
+        String url = UriComponentsBuilder
+                .fromUriString(userServiceUrl + "/api/v1/user?ids[]={ids}")
+                .queryParam("ids", userIds)
+                .toUriString();
 
-        if (users == null || users.size() != userIds.size()) {
-            throw new BadRequestException("Один или несколько пользователей не найдены");
-        }
+        ResponseEntity<List<User>> responseEntity =
+                restTemplate.exchange(
+                        url,
+                        HttpMethod.GET,
+                        null,
+                        new ParameterizedTypeReference<>() {}
+                );
 
-        return users;
+        userIds.stream().filter(e -> !responseEntity.getBody().stream()
+                .map(User::getId).toList()
+                .contains(e)).findFirst()
+                .ifPresent(
+                    (id) -> {
+                        throw new BadRequestException(String.format("Пользователь с id %d не найден", id));
+                    }
+        );
     }
 }

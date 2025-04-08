@@ -6,10 +6,10 @@ import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
-import ru.javajabka.taskservice.dto.TaskUpdateDTO;
+import ru.javajabka.taskservice.model.TaskUpdateDTO;
 import ru.javajabka.taskservice.exception.BadRequestException;
-import ru.javajabka.taskservice.dto.TaskRequestDTO;
-import ru.javajabka.taskservice.model.TaskResponse;
+import ru.javajabka.taskservice.model.TaskRequestDTO;
+import ru.javajabka.taskservice.model.Task;
 import ru.javajabka.taskservice.model.TaskStatus;
 import ru.javajabka.taskservice.repository.mapper.TaskServiceMapper;
 import java.util.List;
@@ -44,69 +44,51 @@ public class TaskServiceRepository {
             AND (:status = 'DELETE' OR status != 'DELETE')
             """;
 
-
     private final NamedParameterJdbcTemplate jdbcTemplate;
     private final TaskServiceMapper taskServiceMapper;
 
-
-    public TaskResponse create(final TaskRequestDTO taskRequest) {
+    public Task create(final Task task) {
         try {
-            return jdbcTemplate.queryForObject(INSERT, taskToSql(null, taskRequest), taskServiceMapper);
+            return jdbcTemplate.queryForObject(INSERT, taskToSql(task), taskServiceMapper);
         } catch (DuplicateKeyException exc) {
-            throw new BadRequestException(String.format("Задача с названием %s уже существует", taskRequest.getTitle()));
+            throw new BadRequestException(String.format("Задача с названием %s уже существует", task.getTitle()));
         }
 
     }
 
-    public TaskResponse getById(final Long id) {
+    public Task getById(final Long id) {
         try {
-            return jdbcTemplate.queryForObject(GET_BY_ID, taskToSql(id, null), taskServiceMapper);
+            return jdbcTemplate.queryForObject(GET_BY_ID, new MapSqlParameterSource("id", id), taskServiceMapper);
         } catch (EmptyResultDataAccessException exc) {
             throw new BadRequestException(String.format("Задача с id %d не найдена", id));
         }
 
     }
 
-    public TaskResponse update(final TaskUpdateDTO taskUpdateDTO) {
+    public Task update(final Task task) {
         try {
-            return jdbcTemplate.queryForObject(UPDATE, taskToSql(taskUpdateDTO), taskServiceMapper);
+            return jdbcTemplate.queryForObject(UPDATE, taskToSql(task), taskServiceMapper);
         } catch (DuplicateKeyException exc) {
-            throw new BadRequestException(String.format("Задача с названием %s уже существует", taskUpdateDTO.getTitle()));
+            throw new BadRequestException(String.format("Задача с названием %s уже существует", task.getTitle()));
         } catch (EmptyResultDataAccessException exc) {
-            throw new BadRequestException(String.format("Задача с id %d не найдена", taskUpdateDTO.getId()));
+            throw new BadRequestException(String.format("Задача с id %d не найдена", task.getId()));
         }
 
     }
 
-    public List<TaskResponse> getAll(final Optional<TaskStatus> status, final Optional<Long> assignee) {
+    public List<Task> getAll(final Optional<TaskStatus> status, final Optional<Long> assignee) {
         return jdbcTemplate.query(GET_ALL, taskToSql(status, assignee), taskServiceMapper);
     }
 
-    private MapSqlParameterSource taskToSql(final Long id, final TaskRequestDTO taskRequest) {
+    private MapSqlParameterSource taskToSql(final Task task) {
         MapSqlParameterSource parameterSource = new MapSqlParameterSource();
-        parameterSource.addValue("id", id);
-
-        if (taskRequest != null) {
-            parameterSource.addValue("title", taskRequest.getTitle());
-            parameterSource.addValue("description", taskRequest.getDescription());
-            parameterSource.addValue("deadLine", taskRequest.getDeadLine());
-            parameterSource.addValue("author", taskRequest.getAuthor());
-            parameterSource.addValue("assignee", taskRequest.getAssignee());
-        }
-
-        return parameterSource;
-    }
-
-    private MapSqlParameterSource taskToSql(final TaskUpdateDTO taskUpdateDTO) {
-        MapSqlParameterSource parameterSource = new MapSqlParameterSource();
-
-        parameterSource.addValue("id", taskUpdateDTO.getId());
-        parameterSource.addValue("title", taskUpdateDTO.getTitle());
-        parameterSource.addValue("description", taskUpdateDTO.getDescription());
-        parameterSource.addValue("status", taskUpdateDTO.getStatus().toString());
-        parameterSource.addValue("deadLine", taskUpdateDTO.getDeadLine());
-        parameterSource.addValue("assignee", taskUpdateDTO.getAssignee());
-
+        parameterSource.addValue("id", task.getId());
+        parameterSource.addValue("title", task.getTitle());
+        parameterSource.addValue("description", task.getDescription());
+        parameterSource.addValue("status", Optional.ofNullable(task.getStatus()).orElse(TaskStatus.TO_DO).toString());
+        parameterSource.addValue("deadLine", task.getDeadLine());
+        parameterSource.addValue("author", task.getAuthor());
+        parameterSource.addValue("assignee", task.getAssignee());
         return parameterSource;
     }
 

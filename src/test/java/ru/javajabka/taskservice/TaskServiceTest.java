@@ -7,10 +7,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
-import ru.javajabka.taskservice.dto.TaskUpdateDTO;
+import ru.javajabka.taskservice.model.TaskUpdateDTO;
 import ru.javajabka.taskservice.exception.BadRequestException;
-import ru.javajabka.taskservice.dto.TaskRequestDTO;
-import ru.javajabka.taskservice.model.TaskResponse;
+import ru.javajabka.taskservice.model.TaskRequestDTO;
+import ru.javajabka.taskservice.model.Task;
 import ru.javajabka.taskservice.model.TaskStatus;
 import ru.javajabka.taskservice.repository.TaskServiceRepository;
 import ru.javajabka.taskservice.service.TaskService;
@@ -34,25 +34,28 @@ public class TaskServiceTest {
     private TaskService taskService;
 
     @Test
-    public void shouldReturnTaskResponse_WhenCreateValid() {
+    public void shouldReturnTask_WhenCreateValid() {
         TaskRequestDTO taskRequest = buildTaskRequest("Task 1", "Desc for task 1", LocalDate.of(2025, 5, 5), 1L, 2L);
-        TaskResponse taskResponse = buildTaskResponse(
+        Task task = buildTaskResponse(
+                null,
+                taskRequest.getTitle(),
+                taskRequest.getDescription(),
+                null,
+                taskRequest.getDeadLine(),
                 1L,
-                "Task 1",
-                "Desc for task 1",
-                TaskStatus.TO_DO,
-                LocalDate.of(2025, 5, 5), 1L, 2L,
-                LocalDateTime.of(2025, 5, 3, 12, 15, 15),
+                2L,
+                null,
                 null
                 );
-        Mockito.when(taskServiceRepository.create(taskRequest)).thenReturn(taskResponse);
-        TaskResponse result = taskService.create(taskRequest);
-        Assertions.assertEquals(taskResponse, result);
-        Mockito.verify(taskServiceRepository).create(taskRequest);
+
+        Mockito.when(taskServiceRepository.create(task)).thenReturn(task);
+        Task result = taskService.create(taskRequest);
+        Assertions.assertEquals(task, result);
+        Mockito.verify(taskServiceRepository).create(task);
     }
 
     @Test
-    public void shouldReturnException_WhenCreateNameEmpty() {
+    public void shouldReturnException_WhenCreate_And_NameEmpty() {
         TaskRequestDTO taskRequest = buildTaskRequest("", "Desc for task 1", LocalDate.of(2025, 5, 5), 1L, 2L);
         final BadRequestException badRequestException = Assertions.assertThrows(
                 BadRequestException.class,
@@ -74,21 +77,16 @@ public class TaskServiceTest {
     @Test
     public void shouldReturnException_WhenUserNotFound() {
         TaskRequestDTO taskRequest = buildTaskRequest("Task 1", "Desc for task 1", LocalDate.of(2025, 5, 5), 100L, 2L);
-        Mockito.when(taskServiceRepository.create(taskRequest)).thenThrow(new BadRequestException("Пользователь с id 100 не найден"));
+        Task task = buildTaskResponse(null, taskRequest.getTitle(), taskRequest.getDescription(), null, taskRequest.getDeadLine(), taskRequest.getAuthor(), taskRequest.getAssignee(), null, null);
+        Mockito.when(taskServiceRepository.create(task)).thenThrow(new BadRequestException("Пользователь с id 100 не найден"));
         final BadRequestException badRequestException = Assertions.assertThrows(BadRequestException.class, () -> taskService.create(taskRequest));
         Assertions.assertEquals("Пользователь с id 100 не найден", badRequestException.getMessage());
-        Mockito.verify(taskServiceRepository).create(taskRequest);
+        Mockito.verify(taskServiceRepository).create(task);
     }
 
     @Test
     public void shouldReturnTaskResponse_WhenTaskGetById() {
-        TaskRequestDTO taskRequest = buildTaskRequest(
-                "Task 1",
-                "Desc for task 1",
-                LocalDate.of(2025, 5, 5), 1L, 2L
-        );
-
-        TaskResponse taskResponse = buildTaskResponse(
+        Task task = buildTaskResponse(
                 1L,
                 "Task 1",
                 "Desc for task 1",
@@ -98,10 +96,10 @@ public class TaskServiceTest {
                 null
         );
 
-        Mockito.when(taskServiceRepository.create(taskRequest)).thenReturn(taskResponse);
-        TaskResponse result = taskService.create(taskRequest);
-        Assertions.assertEquals(taskResponse, result);
-        Mockito.verify(taskServiceRepository).create(taskRequest);
+        Mockito.when(taskServiceRepository.getById(1L)).thenReturn(task);
+        Task result = taskService.getById(1L);
+        Assertions.assertEquals(task, result);
+        Mockito.verify(taskServiceRepository).getById(1L);
     }
 
     @Test
@@ -117,29 +115,26 @@ public class TaskServiceTest {
     @Test
     public void shouldReturnTaskResponse_WhenTaskUpdate() {
         TaskUpdateDTO taskUpdateDTO = buildTaskUpdateDTO(1L, "Task 1", "Desc for task 1", TaskStatus.IN_PROGRESS, LocalDate.of(2025, 5, 5), 1L);
-        TaskResponse taskResponse = buildTaskResponse(
-                taskUpdateDTO.getId(),
-                taskUpdateDTO.getTitle(),
-                taskUpdateDTO.getDescription(),
-                taskUpdateDTO.getStatus(),
-                taskUpdateDTO.getDeadLine(),
-                1L,
-                taskUpdateDTO.getAssignee(),
-                LocalDateTime.of(2025, 5, 3, 12, 30, 30),
-                LocalDateTime.of(2025, 5, 3, 16, 30, 30)
-        );
+        Task task = Task.builder()
+                .id(taskUpdateDTO.getId())
+                .title(taskUpdateDTO.getTitle())
+                .description(taskUpdateDTO.getDescription())
+                .status(taskUpdateDTO.getStatus())
+                .deadLine(taskUpdateDTO.getDeadLine())
+                .assignee(taskUpdateDTO.getAssignee())
+                .build();
 
-        Mockito.when(taskServiceRepository.getById(taskUpdateDTO.getId())).thenReturn(taskResponse);
-        Mockito.when(taskServiceRepository.update(taskUpdateDTO)).thenReturn(taskResponse);
-
-        TaskResponse result = taskService.update(taskUpdateDTO);
-        Assertions.assertEquals(taskResponse, result);
-        Mockito.verify(taskServiceRepository).update(taskUpdateDTO);
+        Mockito.when(taskServiceRepository.getById(taskUpdateDTO.getId())).thenReturn(task);
+        Mockito.when(taskServiceRepository.update(task)).thenReturn(task);
+        Task result = taskService.update(taskUpdateDTO);
+        Assertions.assertEquals(task, result);
+        Mockito.verify(taskServiceRepository).getById(1L);
+        Mockito.verify(taskServiceRepository).update(task);
     }
 
     @Test
     public void shouldReturnListTasks_WhenTaskGetAll() {
-        TaskResponse taskResponse_one = buildTaskResponse(
+        Task taskResponse_one = buildTaskResponse(
                 1L,
                 "Task 1",
                 "Desc for task 1",
@@ -151,7 +146,7 @@ public class TaskServiceTest {
                 null
         );
 
-        TaskResponse taskResponse_two = buildTaskResponse(
+        Task taskResponse_two = buildTaskResponse(
                 2L,
                 "Task 2",
                 "Desc for task 2",
@@ -164,7 +159,7 @@ public class TaskServiceTest {
         );
 
         Mockito.when(taskServiceRepository.getAll(Optional.of(TaskStatus.TO_DO), null)).thenReturn(List.of(taskResponse_one, taskResponse_two));
-        List<TaskResponse> result = taskService.getAll(Optional.of(TaskStatus.TO_DO), null);
+        List<Task> result = taskService.getAll(Optional.of(TaskStatus.TO_DO), null);
         Assertions.assertEquals(List.of(taskResponse_one, taskResponse_two), result);
         Mockito.verify(taskServiceRepository).getAll(Optional.of(TaskStatus.TO_DO), null);
     }
@@ -180,8 +175,8 @@ public class TaskServiceTest {
 
     }
 
-    private TaskResponse buildTaskResponse(Long id, String title, String description, TaskStatus status, LocalDate deadLine, Long author, Long assignee, LocalDateTime createdAt, LocalDateTime updatedAt) {
-        return TaskResponse.builder()
+    private Task buildTaskResponse(Long id, String title, String description, TaskStatus status, LocalDate deadLine, Long author, Long assignee, LocalDateTime createdAt, LocalDateTime updatedAt) {
+        return Task.builder()
                 .id(id)
                 .title(title)
                 .description(description)

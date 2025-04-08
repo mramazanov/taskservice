@@ -43,8 +43,8 @@ public class TaskService {
 
     @Transactional(rollbackFor = Exception.class)
     public Task update(final TaskUpdateDTO taskUpdateDTO) {
-        validate(taskUpdateDTO);
 
+        validate(taskUpdateDTO);
         Task foundTask = taskServiceRepository.getById(taskUpdateDTO.getId());
 
         Task task = Task.builder()

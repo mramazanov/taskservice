@@ -13,6 +13,7 @@ import java.net.URI;
 @Component
 @Log4j2
 public class RestTemplateResponseErrorHandler implements ResponseErrorHandler {
+
     @Override
     public boolean hasError(ClientHttpResponse response) throws IOException {
         return response.getStatusCode().is4xxClientError();

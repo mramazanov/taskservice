@@ -7,6 +7,7 @@ import ru.javajabka.taskservice.exception.RestTemplateResponseErrorHandler;
 
 @Configuration
 public class RestTemplateConfiguration {
+
     @Bean
     public RestTemplate restTemplate(RestTemplateResponseErrorHandler errorHandler) {
         RestTemplate restTemplate = new RestTemplate();

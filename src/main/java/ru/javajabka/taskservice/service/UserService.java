@@ -7,9 +7,12 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
 import ru.javajabka.taskservice.exception.BadRequestException;
 import ru.javajabka.taskservice.model.User;
+
+import java.net.URI;
 import java.util.List;
 
 @Service
@@ -22,9 +25,12 @@ public class UserService {
     private String userServiceUrl;
 
     public void checkUserId(final List<Long> userIds) {
+
         String url = UriComponentsBuilder
-                .fromUriString(userServiceUrl + "/api/v1/user?ids[]={ids}")
-                .queryParam("ids", userIds)
+                .fromUriString(userServiceUrl + "/api/v1/user?ids={ids}")
+                .queryParam("ids", "{ids}")
+                .encode()
+                .buildAndExpand(userIds.toArray())
                 .toUriString();
 
         ResponseEntity<List<User>> responseEntity =

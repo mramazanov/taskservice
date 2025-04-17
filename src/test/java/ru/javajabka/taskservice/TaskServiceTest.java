@@ -7,6 +7,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import ru.javajabka.taskservice.listener.NotificationProducer;
 import ru.javajabka.taskservice.model.TaskUpdateDTO;
 import ru.javajabka.taskservice.exception.BadRequestException;
 import ru.javajabka.taskservice.model.TaskRequestDTO;
@@ -28,6 +29,9 @@ public class TaskServiceTest {
 
     @Mock
     private UserService userService;
+
+    @Mock
+    private NotificationProducer notificationProducer;
 
     @InjectMocks
     private TaskService taskService;
@@ -125,7 +129,7 @@ public class TaskServiceTest {
 
         Mockito.when(taskServiceRepository.getById(taskUpdateDTO.getId())).thenReturn(task);
         Mockito.when(taskServiceRepository.update(task)).thenReturn(task);
-        Task result = taskService.update(taskUpdateDTO);
+        Task result = taskService.update(taskUpdateDTO, 5L);
         Assertions.assertEquals(task, result);
         Mockito.verify(taskServiceRepository).getById(1L);
         Mockito.verify(taskServiceRepository).update(task);

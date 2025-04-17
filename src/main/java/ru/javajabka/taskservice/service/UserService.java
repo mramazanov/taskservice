@@ -7,12 +7,9 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
 import ru.javajabka.taskservice.exception.BadRequestException;
 import ru.javajabka.taskservice.model.User;
-
-import java.net.URI;
 import java.util.List;
 
 @Service
@@ -24,14 +21,14 @@ public class UserService {
     @Value("${url.service.user}")
     private String userServiceUrl;
 
-    public void checkUserId(final List<Long> userIds) {
+    public List<User> checkUserId(final List<Long> userIds) {
 
         String url = UriComponentsBuilder
-                .fromUriString(userServiceUrl + "/api/v1/user?ids={ids}")
-                .queryParam("ids", "{ids}")
+                .fromUriString(userServiceUrl + "/api/v1/user")
+                .queryParam("ids", userIds.toArray())
                 .encode()
-                .buildAndExpand(userIds.toArray())
-                .toUriString();
+                .build()
+                .toString();
 
         ResponseEntity<List<User>> responseEntity =
                 restTemplate.exchange(
@@ -43,11 +40,14 @@ public class UserService {
 
         userIds.stream().filter(e -> !responseEntity.getBody().stream()
                 .map(User::getId).toList()
-                .contains(e)).findFirst()
+                .contains(e))
+                .findFirst()
                 .ifPresent(
-                    (id) -> {
-                        throw new BadRequestException(String.format("Пользователь с id %d не найден", id));
-                    }
-        );
+                        (id) -> {
+                            throw new BadRequestException(String.format("Пользователь с id %d не найден", id));
+                        }
+                );
+
+        return responseEntity.getBody();
     }
 }

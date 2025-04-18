@@ -116,6 +116,37 @@ public class TaskServiceTest {
     }
 
     @Test
+    public void shouldReturnException_WhenTaskStatusInvalid() {
+        TaskUpdateDTO taskUpdateDTO = buildTaskUpdateDTO(
+                1L,
+                "new_title",
+                "title_description",
+                TaskStatus.DONE,
+                LocalDate.of(2025, 5, 5),
+                1L
+        );
+
+        Task foundTask = buildTaskResponse(
+                taskUpdateDTO.getId(),
+                taskUpdateDTO.getTitle(),
+                taskUpdateDTO.getDescription(),
+                TaskStatus.TO_DO,
+                taskUpdateDTO.getDeadLine(),
+                1L,
+                taskUpdateDTO.getAssignee(),
+                null,
+                null
+        );
+
+        Mockito.when(taskServiceRepository.getById(1L)).thenReturn(foundTask);
+        final BadRequestException badRequestException = Assertions.assertThrows(
+                BadRequestException.class,
+                () -> taskService.update(taskUpdateDTO, 1L)
+        );
+        Assertions.assertEquals("Статус не может быть изменён с TO_DO на DONE", badRequestException.getMessage());
+    }
+
+    @Test
     public void shouldReturnTaskResponse_WhenTaskUpdate() {
         TaskUpdateDTO taskUpdateDTO = buildTaskUpdateDTO(1L, "Task 1", "Desc for task 1", TaskStatus.IN_PROGRESS, LocalDate.of(2025, 5, 5), 1L);
         Task task = Task.builder()

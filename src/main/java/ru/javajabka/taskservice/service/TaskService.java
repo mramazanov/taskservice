@@ -92,28 +92,23 @@ public class TaskService {
         LocalDateTime changeTime = LocalDateTime.now();
 
         if (!oldTask.getTitle().equals(newTask.getTitle())) {
-            EventDTO eventDTO = buildEventDTO("title_changed", newTask.getId(), oldTask.getTitle(), newTask.getTitle(), changeTime);
-            notificationProducer.send(eventDTO);
+            sendEventDTO("title_changed", newTask.getId(), oldTask.getTitle(), newTask.getTitle(), changeTime);
         }
 
         if (!oldTask.getDescription().equals(newTask.getDescription())) {
-            EventDTO eventDTO = buildEventDTO("description_changed", newTask.getId(), oldTask.getDescription(), newTask.getDescription(), changeTime);
-            notificationProducer.send(eventDTO);
+            sendEventDTO("description_changed", newTask.getId(), oldTask.getDescription(), newTask.getDescription(), changeTime);
         }
 
         if (!oldTask.getStatus().equals(newTask.getStatus())) {
-            EventDTO eventDTO = buildEventDTO("status_changed", newTask.getId(), oldTask.getStatus().toString(), newTask.getStatus().toString(), changeTime);
-            notificationProducer.send(eventDTO);
+            sendEventDTO("status_changed", newTask.getId(), oldTask.getStatus().toString(), newTask.getStatus().toString(), changeTime);
         }
 
         if (!oldTask.getDeadLine().equals(newTask.getDeadLine())) {
-            EventDTO eventDTO = buildEventDTO("deadline_changed", newTask.getId(), oldTask.getDeadLine().toString(), newTask.getDeadLine().toString(), changeTime);
-            notificationProducer.send(eventDTO);
+            sendEventDTO("deadline_changed", newTask.getId(), oldTask.getDeadLine().toString(), newTask.getDeadLine().toString(), changeTime);
         }
 
         if (!oldTask.getAssignee().equals(newTask.getAssignee())) {
-            EventDTO eventDTO = buildEventDTO("assignee_changed", newTask.getId(), oldTask.getAssignee().toString(), newTask.getAssignee().toString(), changeTime);
-            notificationProducer.send(eventDTO);
+            sendEventDTO("assignee_changed", newTask.getId(), oldTask.getAssignee().toString(), newTask.getAssignee().toString(), changeTime);
         }
     }
 
@@ -177,6 +172,11 @@ public class TaskService {
                 throw new BadRequestException(String.format("Пользователь с id %d не является менеджером", user.getId()));
             }
         });
+    }
+
+    private void sendEventDTO(String eventName, Long taskId, String from, String to, LocalDateTime eventDateTime) {
+        EventDTO eventDTO = buildEventDTO(eventName, taskId, from, to, eventDateTime);
+        notificationProducer.send(eventDTO);
     }
 
     private EventDTO buildEventDTO(String eventName, Long taskId, String from, String to, LocalDateTime eventDateTime) {

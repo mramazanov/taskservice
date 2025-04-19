@@ -39,16 +39,7 @@ public class TaskService {
                 .build();
 
         Task createdTask = taskServiceRepository.create(task);
-
-        EventDTO eventDTO = EventDTO.builder()
-                .eventName("task_created")
-                .taskId(createdTask.getId())
-                .from(null)
-                .to(null)
-                .event_date_time(LocalDateTime.now())
-                .build();
-
-        notificationProducer.send(eventDTO);
+        sendEventDTO("task_created", createdTask.getId(), null, null, LocalDateTime.now());
         return createdTask;
     }
 
@@ -175,17 +166,14 @@ public class TaskService {
     }
 
     private void sendEventDTO(String eventName, Long taskId, String from, String to, LocalDateTime eventDateTime) {
-        EventDTO eventDTO = buildEventDTO(eventName, taskId, from, to, eventDateTime);
-        notificationProducer.send(eventDTO);
-    }
-
-    private EventDTO buildEventDTO(String eventName, Long taskId, String from, String to, LocalDateTime eventDateTime) {
-        return EventDTO.builder()
+        EventDTO eventDTO = EventDTO.builder()
                 .eventName(eventName)
                 .taskId(taskId)
                 .from(from)
                 .to(to)
                 .event_date_time(eventDateTime)
                 .build();
+
+        notificationProducer.send(eventDTO);
     }
 }

@@ -13,5 +13,5 @@ public class EventDTO {
     private final Long taskId;
     private final String from;
     private final String to;
-    private final LocalDateTime event_date_time;
+    private final LocalDateTime eventDateTime;
 }

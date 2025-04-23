@@ -16,7 +16,12 @@ import ru.javajabka.taskservice.model.User;
 import ru.javajabka.taskservice.repository.TaskServiceRepository;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -39,7 +44,15 @@ public class TaskService {
                 .build();
 
         Task createdTask = taskServiceRepository.create(task);
-        sendEventDTO("task_created", createdTask.getId(), null, null, LocalDateTime.now());
+
+        notificationProducer.send(List.of(
+                EventDTO.builder()
+                        .eventName("task_created")
+                        .taskId(createdTask.getId())
+                        .eventDateTime(LocalDateTime.now())
+                        .build()
+        ));
+
         return createdTask;
     }
 
@@ -50,25 +63,20 @@ public class TaskService {
 
     @Transactional(rollbackFor = Exception.class)
     public Task update(final TaskUpdateDTO taskUpdateDTO, final Long authorId) {
-
-        validate(taskUpdateDTO, authorId);
-        Task foundTask = taskServiceRepository.getById(taskUpdateDTO.getId());
-
-        if (taskUpdateDTO.getStatus() != null) {
-            checkStatus(foundTask.getStatus(), taskUpdateDTO.getStatus());
-        }
+        Task validatedTask = validate(taskUpdateDTO, authorId);
 
         Task task = Task.builder()
                 .id(taskUpdateDTO.getId())
-                .title(Optional.ofNullable(taskUpdateDTO.getTitle()).orElse(foundTask.getTitle()))
-                .description(Optional.ofNullable(taskUpdateDTO.getDescription()).orElse(foundTask.getDescription()))
-                .status(Optional.ofNullable(taskUpdateDTO.getStatus()).orElse(foundTask.getStatus()))
-                .deadLine(Optional.ofNullable(taskUpdateDTO.getDeadLine()).orElse(foundTask.getDeadLine()))
-                .assignee(Optional.ofNullable(taskUpdateDTO.getAssignee()).orElse(foundTask.getAssignee()))
+                .title(Optional.ofNullable(taskUpdateDTO.getTitle()).orElse(validatedTask.getTitle()))
+                .description(Optional.ofNullable(taskUpdateDTO.getDescription()).orElse(validatedTask.getDescription()))
+                .status(Optional.ofNullable(taskUpdateDTO.getStatus()).orElse(validatedTask.getStatus()))
+                .deadLine(Optional.ofNullable(taskUpdateDTO.getDeadLine()).orElse(validatedTask.getDeadLine()))
+                .assignee(Optional.ofNullable(taskUpdateDTO.getAssignee()).orElse(validatedTask.getAssignee()))
                 .build();
 
-        sendEvent(foundTask, task);
-        return taskServiceRepository.update(task);
+        Task savedTask = taskServiceRepository.update(task);
+        sendEvent(validatedTask, task);
+        return savedTask;
     }
 
     @Transactional(readOnly = true)
@@ -81,26 +89,59 @@ public class TaskService {
 
     private void sendEvent(final Task oldTask, final Task newTask) {
         LocalDateTime changeTime = LocalDateTime.now();
+        List<EventDTO> eventsDTO = new ArrayList<>();
 
         if (!oldTask.getTitle().equals(newTask.getTitle())) {
-            sendEventDTO("title_changed", newTask.getId(), oldTask.getTitle(), newTask.getTitle(), changeTime);
+            eventsDTO.add(EventDTO.builder()
+                    .eventName("title_changed")
+                    .taskId(newTask.getId())
+                    .from(oldTask.getTitle())
+                    .to(newTask.getTitle())
+                    .eventDateTime(changeTime)
+                    .build());
         }
 
         if (!oldTask.getDescription().equals(newTask.getDescription())) {
-            sendEventDTO("description_changed", newTask.getId(), oldTask.getDescription(), newTask.getDescription(), changeTime);
+            eventsDTO.add(EventDTO.builder()
+                    .eventName("description_changed")
+                    .taskId(newTask.getId())
+                    .from(oldTask.getDescription())
+                    .to(newTask.getDescription())
+                    .eventDateTime(changeTime)
+                    .build());
         }
 
         if (!oldTask.getStatus().equals(newTask.getStatus())) {
-            sendEventDTO("status_changed", newTask.getId(), oldTask.getStatus().toString(), newTask.getStatus().toString(), changeTime);
+            eventsDTO.add(EventDTO.builder()
+                    .eventName("status_changed")
+                    .taskId(oldTask.getId())
+                    .from(oldTask.getStatus().toString())
+                    .to(newTask.getStatus().toString())
+                    .eventDateTime(changeTime)
+                    .build());
         }
 
         if (!oldTask.getDeadLine().equals(newTask.getDeadLine())) {
-            sendEventDTO("deadline_changed", newTask.getId(), oldTask.getDeadLine().toString(), newTask.getDeadLine().toString(), changeTime);
+            eventsDTO.add(EventDTO.builder()
+                    .eventName("deadline_changed")
+                    .taskId(newTask.getId())
+                    .from(oldTask.getDeadLine().toString())
+                    .to(newTask.getDeadLine().toString())
+                    .eventDateTime(changeTime)
+                    .build());
         }
 
         if (!oldTask.getAssignee().equals(newTask.getAssignee())) {
-            sendEventDTO("assignee_changed", newTask.getId(), oldTask.getAssignee().toString(), newTask.getAssignee().toString(), changeTime);
+            eventsDTO.add(EventDTO.builder()
+                    .eventName("assignee_changed")
+                    .taskId(newTask.getId())
+                    .from(oldTask.getAssignee().toString())
+                    .to(newTask.getAssignee().toString())
+                    .eventDateTime(changeTime)
+                    .build());
         }
+
+        notificationProducer.send(eventsDTO);
     }
 
     private void checkStatus(TaskStatus fromStatus, TaskStatus toStatus) {
@@ -139,41 +180,40 @@ public class TaskService {
         if (taskRequest.getAssignee() == null || taskRequest.getAssignee() <= 0) {
             throw new BadRequestException("Введите идентификатор ответственного больше нуля");
         }
-        List<User> users = userService.checkUserId(List.of(taskRequest.getAuthor(), taskRequest.getAssignee()));
+        List<User> users = userService.checkAndGetUsers(List.of(taskRequest.getAuthor(), taskRequest.getAssignee()));
 
         checkUserRole(users, taskRequest.getAuthor());
     }
 
-    private void validate(final TaskUpdateDTO taskUpdateDTO, final Long authorId) {
-        if (taskUpdateDTO != null && taskUpdateDTO.getDeadLine() != null) {
+    private Task validate(final TaskUpdateDTO taskUpdateDTO, final Long authorId) {
+        if (taskUpdateDTO == null) {
+            throw new BadRequestException("Введите значения для обновления задачи");
+        }
+
+        if (taskUpdateDTO.getDeadLine() != null) {
             if (taskUpdateDTO.getDeadLine().isBefore(LocalDate.now().plusDays(1))) {
                 throw new BadRequestException("Введите дату дедлайна позже текущей даты");
             }
         }
 
-        if (taskUpdateDTO != null && taskUpdateDTO.getAssignee() != null) {
-            List<User> user = userService.checkUserId(List.of(taskUpdateDTO.getAssignee(), authorId));
+        if (taskUpdateDTO.getAssignee() != null) {
+            List<User> user = userService.checkAndGetUsers(List.of(taskUpdateDTO.getAssignee(), authorId));
             checkUserRole(user, authorId);
         }
+
+        Task foundTask = taskServiceRepository.getById(taskUpdateDTO.getId());
+        if (taskUpdateDTO.getStatus() != null) {
+            checkStatus(foundTask.getStatus(), taskUpdateDTO.getStatus());
+        }
+
+        return foundTask;
     }
 
-    private void checkUserRole(List<User> users, Long authorId) {
-        users.stream().filter(user -> user.getId().equals(authorId)).findFirst().ifPresent(user -> {
+    private void checkUserRole(List<User> users, Long editorId) {
+        users.stream().filter(user -> user.getId().equals(editorId)).findFirst().ifPresent(user -> {
             if (!user.getRole().equals(Role.MANAGER)) {
                 throw new BadRequestException(String.format("Пользователь с id %d не является менеджером", user.getId()));
             }
         });
-    }
-
-    private void sendEventDTO(String eventName, Long taskId, String from, String to, LocalDateTime eventDateTime) {
-        EventDTO eventDTO = EventDTO.builder()
-                .eventName(eventName)
-                .taskId(taskId)
-                .from(from)
-                .to(to)
-                .event_date_time(eventDateTime)
-                .build();
-
-        notificationProducer.send(eventDTO);
     }
 }

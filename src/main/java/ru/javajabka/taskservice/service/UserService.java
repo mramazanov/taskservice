@@ -21,7 +21,7 @@ public class UserService {
     @Value("${url.service.user}")
     private String userServiceUrl;
 
-    public List<User> checkUserId(final List<Long> userIds) {
+    public List<User> checkAndGetUsers(final List<Long> userIds) {
 
         String url = UriComponentsBuilder
                 .fromUriString(userServiceUrl + "/api/v1/user")

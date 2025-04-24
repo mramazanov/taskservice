@@ -197,8 +197,8 @@ public class TaskService {
         }
 
         if (taskUpdateDTO.getAssignee() != null) {
-            List<User> user = userService.checkAndGetUsers(List.of(taskUpdateDTO.getAssignee(), authorId));
-            checkUserRole(user, authorId);
+            List<User> users = userService.checkAndGetUsers(List.of(taskUpdateDTO.getAssignee(), authorId));
+            checkUserRole(users, authorId);
         }
 
         Task foundTask = taskServiceRepository.getById(taskUpdateDTO.getId());

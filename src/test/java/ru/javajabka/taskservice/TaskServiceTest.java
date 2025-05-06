@@ -7,6 +7,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import ru.javajabka.taskservice.listener.NotificationProducer;
 import ru.javajabka.taskservice.model.TaskUpdateDTO;
 import ru.javajabka.taskservice.exception.BadRequestException;
 import ru.javajabka.taskservice.model.TaskRequestDTO;
@@ -28,6 +29,9 @@ public class TaskServiceTest {
 
     @Mock
     private UserService userService;
+
+    @Mock
+    private NotificationProducer notificationProducer;
 
     @InjectMocks
     private TaskService taskService;
@@ -112,6 +116,37 @@ public class TaskServiceTest {
     }
 
     @Test
+    public void shouldReturnException_WhenTaskStatusInvalid() {
+        TaskUpdateDTO taskUpdateDTO = buildTaskUpdateDTO(
+                1L,
+                "new_title",
+                "title_description",
+                TaskStatus.DONE,
+                LocalDate.of(2025, 5, 5),
+                1L
+        );
+
+        Task foundTask = buildTaskResponse(
+                taskUpdateDTO.getId(),
+                taskUpdateDTO.getTitle(),
+                taskUpdateDTO.getDescription(),
+                TaskStatus.TO_DO,
+                taskUpdateDTO.getDeadLine(),
+                1L,
+                taskUpdateDTO.getAssignee(),
+                null,
+                null
+        );
+
+        Mockito.when(taskServiceRepository.getById(1L)).thenReturn(foundTask);
+        final BadRequestException badRequestException = Assertions.assertThrows(
+                BadRequestException.class,
+                () -> taskService.update(taskUpdateDTO, 1L)
+        );
+        Assertions.assertEquals("Статус не может быть изменён с TO_DO на DONE", badRequestException.getMessage());
+    }
+
+    @Test
     public void shouldReturnTaskResponse_WhenTaskUpdate() {
         TaskUpdateDTO taskUpdateDTO = buildTaskUpdateDTO(1L, "Task 1", "Desc for task 1", TaskStatus.IN_PROGRESS, LocalDate.of(2025, 5, 5), 1L);
         Task task = Task.builder()
@@ -125,7 +160,7 @@ public class TaskServiceTest {
 
         Mockito.when(taskServiceRepository.getById(taskUpdateDTO.getId())).thenReturn(task);
         Mockito.when(taskServiceRepository.update(task)).thenReturn(task);
-        Task result = taskService.update(taskUpdateDTO);
+        Task result = taskService.update(taskUpdateDTO, 5L);
         Assertions.assertEquals(task, result);
         Mockito.verify(taskServiceRepository).getById(1L);
         Mockito.verify(taskServiceRepository).update(task);

@@ -24,7 +24,6 @@ public class RestTemplateResponseErrorHandler implements ResponseErrorHandler {
         if (response.getStatusCode().is4xxClientError()) {
             ObjectMapper mapper = new ObjectMapper();
             JsonNode error = mapper.readTree(response.getBody().readAllBytes());
-            log.error(error.get("message").asText());
             throw new BadRequestException(error.get("message").asText());
         }
     }

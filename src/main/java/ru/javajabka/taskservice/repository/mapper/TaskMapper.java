@@ -10,7 +10,7 @@ import java.sql.Timestamp;
 import java.time.LocalDateTime;
 
 @Component
-public class TaskServiceMapper implements RowMapper<Task> {
+public class TaskMapper implements RowMapper<Task> {
 
     @Override
     public Task mapRow(ResultSet rs, int rowNum) throws SQLException {

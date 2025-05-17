@@ -2,6 +2,8 @@ package ru.javajabka.taskservice.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import ru.javajabka.taskservice.exception.BadRequestException;
 import ru.javajabka.taskservice.model.TaskReport;
 import ru.javajabka.taskservice.model.TaskReportRequestDTO;
 import ru.javajabka.taskservice.model.User;
@@ -20,6 +22,7 @@ public class ReportService {
     private final TeamService teamService;
     private final UserService userService;
 
+    @Transactional(readOnly = true)
     public TaskReport getReport(TaskReportRequestDTO taskReportRequestDTO) {
         validate(taskReportRequestDTO);
         Set<Long> teamMembers = new HashSet<>(teamService.getMembersOfTeam(taskReportRequestDTO.getTeamId()));
@@ -48,15 +51,15 @@ public class ReportService {
         }
 
         if (taskReportRequestDTO.getTeamId() == null || taskReportRequestDTO.getTeamId() < 1) {
-            throw new IllegalArgumentException("Введите корректный id для команды");
+            throw new BadRequestException("Введите id для команды больше нуля");
         }
 
         if (taskReportRequestDTO.getStartDate() == null) {
-            throw new IllegalArgumentException("Введите корректную дату старта");
+            throw new BadRequestException("Введите дату старта");
         }
 
         if (taskReportRequestDTO.getEndDate() == null) {
-            throw new IllegalArgumentException("Введите корректную дату окончания");
+            throw new BadRequestException("Введите дату окончания");
         }
     }
 }

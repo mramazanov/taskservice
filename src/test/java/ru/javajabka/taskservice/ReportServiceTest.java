@@ -7,6 +7,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import ru.javajabka.taskservice.exception.BadRequestException;
 import ru.javajabka.taskservice.model.TaskReport;
 import ru.javajabka.taskservice.model.TaskReportRequestDTO;
 import ru.javajabka.taskservice.model.User;
@@ -56,6 +57,16 @@ public class ReportServiceTest {
 
         TaskReport taskReport = reportService.getReport(taskReportRequestDTO);
         Assertions.assertEquals(taskReport, buildTaskReport());
+    }
+
+    @Test
+    public void errorCreateReport_whenTaskIdIncorrect() {
+        TaskReportRequestDTO taskReportRequestDTO = TaskReportRequestDTO.builder().teamId(0L).build();
+        final BadRequestException exception = Assertions.assertThrows(
+                BadRequestException.class,
+                () -> reportService.getReport(taskReportRequestDTO)
+        );
+        Assertions.assertEquals("Введите id для команды больше нуля", exception.getMessage());
     }
 
     private Map<String, Long> buidTaskWithStatus() {

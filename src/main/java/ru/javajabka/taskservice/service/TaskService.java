@@ -30,6 +30,7 @@ public class TaskService {
     private final UserService userService;
     private final NotificationProducer notificationProducer;
     private final TaskServiceRepository taskServiceRepository;
+    private final TeamService teamService;
 
     @Transactional(rollbackFor = Exception.class)
     public Task create(final TaskRequestDTO taskRequest) {
@@ -142,6 +143,22 @@ public class TaskService {
         }
 
         notificationProducer.send(eventsDTO);
+    }
+
+    public Long getTasksCountByPeriod(Set<Long> assigneeIds, LocalDate startDate, LocalDate endDate) {
+        return taskServiceRepository.getAllByIds(assigneeIds, startDate, endDate);
+    }
+
+    public Map<String, Long> getTasksPerStatus(Set<Long> assigneeIds, LocalDate startDate, LocalDate endDate) {
+        return taskServiceRepository.getTasksPerStatus(assigneeIds, startDate, endDate);
+    }
+
+    public Map<Long, Long> getMostAciveMembers(Set<Long> teamMembers, LocalDate startDate, LocalDate endDate) {
+        return taskServiceRepository.getMostActiveMembers(teamMembers, startDate, endDate);
+    }
+
+    public Long getAvgTaskDuration(Set<Long> teamMembers, LocalDate startDate, LocalDate endDate) {
+        return taskServiceRepository.getAvgTaskDuration(teamMembers, startDate, endDate);
     }
 
     private void checkStatus(TaskStatus fromStatus, TaskStatus toStatus) {

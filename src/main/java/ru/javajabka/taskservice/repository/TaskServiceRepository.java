@@ -53,24 +53,16 @@ public class TaskServiceRepository {
             OR (created_at BETWEEN :startDate AND :endDate));
             """;
 
-    private static final String GET_ALL_PER_STATUS = """
-            WITH allTasksTeam AS (
+    private static final String GET_ALL_PER_STATUS = """         
+            WITH tasks_with_status AS ( 
                 SELECT *
                 FROM task_service.task
                 WHERE assignee IN  (:ids)
+                AND status <> 'DELETE'
                 AND ((updated_at BETWEEN :startDate AND :endDate)
                 OR (created_at BETWEEN :startDate AND :endDate))
-            ), taskPerStatus AS (
-                SELECT status,
-                                 CASE
-                                     WHEN status = 'TO_DO' THEN 1
-                                     WHEN status = 'IN_PROGRESS' THEN 1
-                                     WHEN status = 'DONE' THEN 1
-                                     END AS count_task
-                          FROM allTasksTeam
             )
-            
-            SELECT status, SUM(count_task) AS count  FROM taskPerStatus GROUP BY status;
+            SELECT status, COUNT(*) AS count  FROM tasks_with_status GROUP BY status;
             """;
 
     private static final String GET_MOST_ACTIVE_MEMBERS = """
